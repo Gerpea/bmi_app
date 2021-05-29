@@ -12,7 +12,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BMI',
-      theme: ThemeData.light().copyWith(backgroundColor: kBackgroundColor),
+      theme: ThemeData(
+          fontFamily: 'Ubuntu',
+          backgroundColor: kBackgroundColor,
+          textTheme: TextTheme(
+              headline1: TextStyle(fontWeight: FontWeight.w500, fontSize: 48))),
       home: BMIScreen(),
     );
   }
