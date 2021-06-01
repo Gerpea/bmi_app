@@ -11,9 +11,9 @@ const kRedColor = Color(0xFFFF332B);
 const kTextColor = kDarkColor;
 const kBackgroundColor = kLightColor;
 
-const kSkinnyColor = kBlueColor;
-const kNormalColor = kGreenColor;
-const kWeightColor = kOrangeColor;
+const kUnderweightColor = kBlueColor;
+const kHealthyColor = kGreenColor;
+const kOverweightColor = kOrangeColor;
 const kObesseColor = kRedColor;
 
 const double lDefaultPadding = 20.0;
