@@ -25,13 +25,49 @@ class SliderInput extends StatefulWidget {
 }
 
 class _SliderInputState extends State<SliderInput> {
-  double _value = 10.0;
+  double _value = 55.0;
 
   handleChangeValue(double newValue) {
     setState(() {
       _value = newValue;
     });
   }
+
+  static final RangeThumbSelector _customRangeThumbSelector = (
+    TextDirection textDirection,
+    RangeValues values,
+    double tapValue,
+    Size thumbSize,
+    Size trackSize,
+    double dx,
+  ) {
+    final double touchRadius = math.max(thumbSize.width, 48) / 2;
+    final bool inStartTouchTarget =
+        (tapValue - values.start).abs() * trackSize.width < touchRadius;
+    final bool inEndTouchTarget =
+        (tapValue - values.end).abs() * trackSize.width < touchRadius;
+
+    if (inStartTouchTarget && inEndTouchTarget) {
+      bool towardsStart;
+      bool towardsEnd;
+      switch (textDirection) {
+        case TextDirection.ltr:
+          towardsStart = dx < 0;
+          towardsEnd = dx > 0;
+          break;
+        case TextDirection.rtl:
+          towardsStart = dx > 0;
+          towardsEnd = dx < 0;
+          break;
+      }
+      if (towardsStart) return null;
+      if (towardsEnd) return Thumb.end;
+    } else {
+      if (tapValue < values.start || inStartTouchTarget) return null;
+      if (tapValue > values.end || inEndTouchTarget) return Thumb.end;
+    }
+    return null;
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -43,17 +79,19 @@ class _SliderInputState extends State<SliderInput> {
           SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 27,
-                trackShape: SliderTrack(),
                 activeTrackColor: kUnderweightColor,
                 inactiveTrackColor: kBackgroundColor,
                 thumbColor: kBackgroundColor,
-                thumbShape: SliderThumb(),
+                rangeThumbShape: RangeSliderThumb(),
+                disabledActiveTrackColor: kBackgroundColor.withAlpha(0x3F),
+                thumbSelector: _customRangeThumbSelector,
+                rangeTrackShape: RangeSliderTrack(),
               ),
-              child: Slider(
+              child: RangeSlider(
                 min: 0,
                 max: 100,
-                value: _value,
-                onChanged: handleChangeValue,
+                values: RangeValues(10, _value),
+                onChanged: (values) => {handleChangeValue(values.end)},
               )),
         ],
       ),
@@ -61,7 +99,7 @@ class _SliderInputState extends State<SliderInput> {
   }
 }
 
-class SliderThumb extends SliderComponentShape {
+class RangeSliderThumb extends RangeSliderThumbShape {
   Color _getShadowColor(Color color) {
     final RgbColor rgbShadowColor =
         RgbColor(color.red, color.green, color.blue, color.alpha)
@@ -82,35 +120,56 @@ class SliderThumb extends SliderComponentShape {
       {Animation<double> activationAnimation,
       Animation<double> enableAnimation,
       bool isDiscrete,
-      TextPainter labelPainter,
-      RenderBox parentBox,
-      SliderThemeData sliderTheme,
+      bool isEnabled,
+      bool isOnTop,
       TextDirection textDirection,
-      double value,
-      double textScaleFactor,
-      Size sizeWithOverflow}) {
+      SliderThemeData sliderTheme,
+      Thumb thumb,
+      bool isPressed}) {
     final Canvas canvas = context.canvas;
-    final shadowColor = _getShadowColor(sliderTheme.thumbColor);
+    if (thumb == Thumb.end) {
+      final shadowColor = _getShadowColor(sliderTheme.thumbColor);
 
-    final circle = Path()
-      ..addOval(Rect.fromCircle(
-          center: center, radius: sliderTheme.trackHeight / 2 + 1));
+      final circle = Path()
+        ..addOval(Rect.fromCircle(
+            center: center, radius: sliderTheme.trackHeight / 2));
 
-    final outerShadowPaint = Paint()
-      ..color = shadowColor.withAlpha(0xBF)
-      ..style = PaintingStyle.fill
-      ..maskFilter = MaskFilter.blur(BlurStyle.outer, 5);
+      final outerShadowPaint = Paint()
+        ..color = shadowColor.withAlpha(0xBF)
+        ..style = PaintingStyle.fill
+        ..maskFilter = MaskFilter.blur(BlurStyle.outer, 5);
 
-    final fillPaint = Paint()
-      ..color = sliderTheme.thumbColor
-      ..style = PaintingStyle.fill;
+      final fillPaint = Paint()
+        ..color = sliderTheme.thumbColor
+        ..style = PaintingStyle.fill;
 
-    canvas.drawPath(circle, fillPaint);
-    canvas.drawPath(circle, outerShadowPaint);
+      canvas.drawPath(circle, fillPaint);
+      canvas.drawPath(circle, outerShadowPaint);
+    } else {
+      final line = Path()
+        ..addRect(Rect.fromLTWH(center.dx, 0, 1, sliderTheme.trackHeight));
+      final inactiveArea = Path()
+        ..addRRect(RRect.fromRectAndCorners(
+          Rect.fromLTRB(0, -1, center.dx, sliderTheme.trackHeight + 1),
+          topLeft: Radius.circular(sliderTheme.trackHeight / 2),
+          bottomLeft: Radius.circular(sliderTheme.trackHeight / 2),
+        ));
+
+      final linePaint = Paint()
+        ..color = sliderTheme.thumbColor
+        ..style = PaintingStyle.fill;
+
+      final areaPaint = Paint()
+        ..color = sliderTheme.disabledActiveTrackColor
+        ..style = PaintingStyle.fill;
+
+      canvas.drawPath(line, linePaint);
+      canvas.drawPath(inactiveArea, areaPaint);
+    }
   }
 }
 
-class SliderTrack extends SliderTrackShape {
+class RangeSliderTrack extends RangeSliderTrackShape {
   @override
   Rect getPreferredRect({
     RenderBox parentBox,
@@ -119,8 +178,7 @@ class SliderTrack extends SliderTrackShape {
     bool isEnabled,
     bool isDiscrete,
   }) {
-    final double thumbWidth =
-        sliderTheme.thumbShape.getPreferredSize(isEnabled, isDiscrete).width;
+    final double thumbWidth = sliderTheme.trackHeight;
     final double overlayWidth =
         sliderTheme.overlayShape.getPreferredSize(isEnabled, isDiscrete).width;
     final double trackHeight = sliderTheme.trackHeight;
@@ -134,23 +192,35 @@ class SliderTrack extends SliderTrackShape {
     final double trackRight =
         trackLeft + parentBox.size.width - math.max(thumbWidth, overlayWidth);
     final double trackBottom = trackTop + trackHeight;
-    // If the parentBox'size less than slider's size the trackRight will be less than trackLeft, so switch them.
+
     return Rect.fromLTRB(math.min(trackLeft, trackRight), trackTop,
         math.max(trackLeft, trackRight), trackBottom);
   }
 
+  static double convertRadiusToSigma(double radius) {
+    return radius * 0.57735 + 0.5;
+  }
+
+  Color _getShadowColor(Color color) {
+    final RgbColor rgbShadowColor =
+        RgbColor(color.red, color.green, color.blue, color.alpha)
+            .toHsbColor()
+            .copyWith(brightness: 50)
+            .toRgbColor();
+    return Color.fromARGB(rgbShadowColor.alpha, rgbShadowColor.red,
+        rgbShadowColor.green, rgbShadowColor.blue);
+  }
+
   @override
-  void paint(
-    PaintingContext context,
-    Offset offset, {
-    RenderBox parentBox,
-    SliderThemeData sliderTheme,
-    Animation<double> enableAnimation,
-    TextDirection textDirection,
-    Offset thumbCenter,
-    bool isDiscrete,
-    bool isEnabled,
-  }) {
+  void paint(PaintingContext context, Offset offset,
+      {RenderBox parentBox,
+      SliderThemeData sliderTheme,
+      Animation<double> enableAnimation,
+      Offset startThumbCenter,
+      Offset endThumbCenter,
+      bool isEnabled = false,
+      bool isDiscrete = false,
+      TextDirection textDirection}) {
     if (sliderTheme.trackHeight == 0) {
       return;
     }
@@ -166,15 +236,12 @@ class SliderTrack extends SliderTrackShape {
     final Paint inactivePaint = Paint()
       ..color = inactiveTrackColorTween.evaluate(enableAnimation);
     Paint leftTrackPaint;
-    Paint rightTrackPaint;
     switch (textDirection) {
       case TextDirection.ltr:
         leftTrackPaint = activePaint;
-        rightTrackPaint = inactivePaint;
         break;
       case TextDirection.rtl:
         leftTrackPaint = inactivePaint;
-        rightTrackPaint = activePaint;
         break;
     }
 
@@ -188,58 +255,35 @@ class SliderTrack extends SliderTrackShape {
 
     final Path leftTrackSegment = Path()
       ..addRRect(RRect.fromRectAndCorners(
-        Rect.fromLTRB(
-            trackRect.left, trackRect.top, thumbCenter.dx, trackRect.bottom),
+        Rect.fromLTRB(trackRect.left, trackRect.top + 1, endThumbCenter.dx,
+            trackRect.bottom - 1),
         topLeft: Radius.circular(trackRect.height / 2),
         bottomLeft: Radius.circular(trackRect.height / 2),
       ));
     context.canvas.drawPath(leftTrackSegment, leftTrackPaint);
-
-    final Path rightTrackSegment = Path()
-      ..addRRect(RRect.fromRectAndCorners(
-        Rect.fromLTRB(
-            thumbCenter.dx, trackRect.top, trackRect.right, trackRect.bottom),
-        topRight: Radius.circular(trackRect.height / 2),
-        bottomRight: Radius.circular(trackRect.height / 2),
-      ));
-    context.canvas.drawPath(rightTrackSegment, rightTrackPaint);
 
     final spread = 0.3;
     final shadowColor =
         _getShadowColor(sliderTheme.inactiveTrackColor).withAlpha(0x3F);
     final shadowPath = Path()
       ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTRB(
-            trackRect.left, trackRect.top, trackRect.right, trackRect.bottom),
+        Rect.fromLTRB(trackRect.left, trackRect.top + 1, trackRect.right,
+            trackRect.bottom - 1),
         Radius.circular(trackRect.height / 2),
       ))
       ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTRB(trackRect.left + spread, trackRect.top + spread,
-            trackRect.right - spread, trackRect.bottom - spread),
+        Rect.fromLTRB(trackRect.left + spread, trackRect.top + 1 + spread,
+            trackRect.right - spread, trackRect.bottom - spread - 1),
         Radius.circular(trackRect.height / 2),
       ))
       ..fillType = PathFillType.evenOdd;
 
-    for (var i = 1; i <= 10; i++) {
+    for (var i = 1; i <= 5; i++) {
       final shadowPaint = Paint()
         ..color = shadowColor.withAlpha(0x3F)
         ..maskFilter = MaskFilter.blur(
-            BlurStyle.outer, convertRadiusToSigma((i * spread).toDouble()));
+            BlurStyle.normal, convertRadiusToSigma((i * spread).toDouble()));
       context.canvas.drawPath(shadowPath, shadowPaint);
     }
-  }
-
-  static double convertRadiusToSigma(double radius) {
-    return radius * 0.57735 + 0.5;
-  }
-
-  Color _getShadowColor(Color color) {
-    final RgbColor rgbShadowColor =
-        RgbColor(color.red, color.green, color.blue, color.alpha)
-            .toHsbColor()
-            .copyWith(brightness: 50)
-            .toRgbColor();
-    return Color.fromARGB(rgbShadowColor.alpha, rgbShadowColor.red,
-        rgbShadowColor.green, rgbShadowColor.blue);
   }
 }
