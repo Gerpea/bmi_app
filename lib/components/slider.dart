@@ -73,26 +73,35 @@ class _SliderInputState extends State<SliderInput> {
   Widget build(BuildContext context) {
     return Container(
       width: 244,
-      height: 27,
-      child: Stack(
+      height: 244,
+      child: Column(
         children: [
+          Text(
+            _value.toStringAsFixed(2),
+            style: Theme.of(context)
+                .textTheme
+                .headline4
+                .copyWith(color: kUnderweightColor),
+          ),
           SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 27,
-                activeTrackColor: kUnderweightColor,
-                inactiveTrackColor: kBackgroundColor,
-                thumbColor: kBackgroundColor,
-                rangeThumbShape: RangeSliderThumb(),
-                disabledActiveTrackColor: kBackgroundColor.withAlpha(0x3F),
-                thumbSelector: _customRangeThumbSelector,
-                rangeTrackShape: RangeSliderTrack(),
-              ),
-              child: RangeSlider(
-                min: 0,
-                max: 100,
-                values: RangeValues(10, _value),
-                onChanged: (values) => {handleChangeValue(values.end)},
-              )),
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 27,
+              activeTrackColor: kUnderweightColor,
+              inactiveTrackColor: kBackgroundColor,
+              thumbColor: kBackgroundColor,
+              rangeThumbShape: RangeSliderThumb(),
+              disabledActiveTrackColor: kBackgroundColor.withAlpha(0x3F),
+              thumbSelector: _customRangeThumbSelector,
+              rangeTrackShape: RangeSliderTrack(),
+              minThumbSeparation: 0,
+            ),
+            child: RangeSlider(
+              min: 0,
+              max: 100,
+              values: RangeValues(30, _value),
+              onChanged: (values) => {handleChangeValue(values.end)},
+            ),
+          ),
         ],
       ),
     );
@@ -132,7 +141,7 @@ class RangeSliderThumb extends RangeSliderThumbShape {
 
       final circle = Path()
         ..addOval(Rect.fromCircle(
-            center: center, radius: sliderTheme.trackHeight / 2));
+            center: center, radius: sliderTheme.trackHeight / 2 - 1));
 
       final outerShadowPaint = Paint()
         ..color = shadowColor.withAlpha(0xBF)
@@ -147,10 +156,15 @@ class RangeSliderThumb extends RangeSliderThumbShape {
       canvas.drawPath(circle, outerShadowPaint);
     } else {
       final line = Path()
-        ..addRect(Rect.fromLTWH(center.dx, 0, 1, sliderTheme.trackHeight));
+        ..addRect(Rect.fromLTWH(
+            center.dx,
+            center.dy - sliderTheme.trackHeight / 2 + 1,
+            1,
+            sliderTheme.trackHeight - 2));
       final inactiveArea = Path()
         ..addRRect(RRect.fromRectAndCorners(
-          Rect.fromLTRB(0, -1, center.dx, sliderTheme.trackHeight + 1),
+          Rect.fromLTWH(0, center.dy - sliderTheme.trackHeight / 2 + 1,
+              center.dx, sliderTheme.trackHeight - 2),
           topLeft: Radius.circular(sliderTheme.trackHeight / 2),
           bottomLeft: Radius.circular(sliderTheme.trackHeight / 2),
         ));
@@ -185,12 +199,10 @@ class RangeSliderTrack extends RangeSliderTrackShape {
     assert(overlayWidth >= 0);
     assert(trackHeight >= 0);
 
-    final double trackLeft =
-        offset.dx + math.max(overlayWidth / 2, thumbWidth / 2);
+    final double trackLeft = offset.dx;
     final double trackTop =
         offset.dy + (parentBox.size.height - trackHeight) / 2;
-    final double trackRight =
-        trackLeft + parentBox.size.width - math.max(thumbWidth, overlayWidth);
+    final double trackRight = trackLeft + parentBox.size.width;
     final double trackBottom = trackTop + trackHeight;
 
     return Rect.fromLTRB(math.min(trackLeft, trackRight), trackTop,

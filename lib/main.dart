@@ -16,7 +16,9 @@ class MyApp extends StatelessWidget {
           fontFamily: 'Ubuntu',
           backgroundColor: kBackgroundColor,
           textTheme: TextTheme(
-              headline1: TextStyle(fontWeight: FontWeight.w500, fontSize: 48))),
+            headline1: TextStyle(fontWeight: FontWeight.w500, fontSize: 48),
+            headline4: TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
+          )),
       home: BMIScreen(),
     );
   }
