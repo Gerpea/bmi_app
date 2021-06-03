@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:bmi/components/circle_progress.dart';
 import 'package:bmi/constants.dart';
@@ -17,14 +19,14 @@ class _BMIScreenState extends State<BMIScreen> {
   double height = 150;
   late BMI bmi = BMI(calculateBMI(weight, height));
 
-  handleWeightChange(value) {
+  handleWeightChange(double value) {
     setState(() {
       weight = value;
       bmi = BMI(calculateBMI(weight, height));
     });
   }
 
-  handleHeightChange(value) {
+  handleHeightChange(double value) {
     setState(() {
       height = value;
       bmi = BMI(calculateBMI(weight, height));
@@ -91,8 +93,8 @@ class _BMIScreenState extends State<BMIScreen> {
                   ),
                   SliderInput(
                     value: weight,
-                    max: 100,
-                    min: 30,
+                    max: weight + 10,
+                    min: 10,
                     onChange: handleWeightChange,
                     color: bmi.color,
                   ),
@@ -102,8 +104,8 @@ class _BMIScreenState extends State<BMIScreen> {
             SliderInput(
               trackHeight: 22,
               value: height,
-              max: 200,
-              min: 50,
+              max: height + 40,
+              min: 40,
               isVertical: true,
               onChange: handleHeightChange,
               color: bmi.color,

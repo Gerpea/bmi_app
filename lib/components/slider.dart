@@ -14,7 +14,7 @@ class SliderInput extends StatelessWidget {
   final double max;
   final double trackHeight;
 
-  const SliderInput(
+  SliderInput(
       {Key? key,
       this.color = Colors.orange,
       this.isVertical = false,
