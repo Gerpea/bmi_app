@@ -5,7 +5,7 @@ import 'package:bmi/models/bmi.dart';
 class BMIIndicator extends StatelessWidget {
   final BMI bmi;
 
-  const BMIIndicator({Key key, this.bmi}) : super(key: key);
+  const BMIIndicator({required Key key, required this.bmi}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +25,7 @@ class BMIIndicator extends StatelessWidget {
         Text(
           bmi.value.toString(),
           style:
-              Theme.of(context).textTheme.headline1.copyWith(color: bmi.color),
+              Theme.of(context).textTheme.headline1?.copyWith(color: bmi.color),
         ),
       ],
     );

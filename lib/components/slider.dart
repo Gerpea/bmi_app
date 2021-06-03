@@ -1,3 +1,4 @@
+import 'package:bmi/components/my_range_slider.dart';
 import 'package:bmi/constants.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
@@ -7,9 +8,11 @@ import 'dart:math' as math;
 // ignore: must_be_immutable
 class SliderInput extends StatefulWidget {
   final Color color;
-  Color shadowColor;
+  late Color shadowColor;
+  final bool isVertical;
 
-  SliderInput({Key key, this.color = Colors.orange}) : super(key: key) {
+  SliderInput({Key? key, this.color = Colors.orange, this.isVertical = true})
+      : super(key: key) {
     final RgbColor rgbShadowColor =
         RgbColor(color.red, color.green, color.blue, color.alpha)
             .toHsbColor()
@@ -74,35 +77,39 @@ class _SliderInputState extends State<SliderInput> {
     return Container(
       width: 244,
       height: 244,
-      child: Column(
-        children: [
-          Text(
-            _value.toStringAsFixed(2),
-            style: Theme.of(context)
-                .textTheme
-                .headline4
-                .copyWith(color: kUnderweightColor),
-          ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 27,
-              activeTrackColor: kUnderweightColor,
-              inactiveTrackColor: kBackgroundColor,
-              thumbColor: kBackgroundColor,
-              rangeThumbShape: RangeSliderThumb(),
-              disabledActiveTrackColor: kBackgroundColor.withAlpha(0x3F),
-              thumbSelector: _customRangeThumbSelector,
-              rangeTrackShape: RangeSliderTrack(),
-              minThumbSeparation: 0,
+      child: RotatedBox(
+        quarterTurns: widget.isVertical ? -1 : 0,
+        child: Column(
+          children: [
+            Text(
+              _value.toStringAsFixed(2),
+              style: Theme.of(context)
+                  .textTheme
+                  .headline4
+                  ?.copyWith(color: kUnderweightColor),
             ),
-            child: RangeSlider(
-              min: 0,
-              max: 100,
-              values: RangeValues(30, _value),
-              onChanged: (values) => {handleChangeValue(values.end)},
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 27,
+                activeTrackColor: kUnderweightColor,
+                inactiveTrackColor: kBackgroundColor,
+                thumbColor: kBackgroundColor,
+                rangeThumbShape: RangeSliderThumb(),
+                disabledActiveTrackColor: kBackgroundColor.withAlpha(0x3F),
+                thumbSelector: _customRangeThumbSelector,
+                rangeTrackShape: RangeSliderTrack(),
+                minThumbSeparation: 0,
+              ),
+              child: MyRangeSlider(
+                isVertical: widget.isVertical,
+                min: 0,
+                max: 100,
+                values: RangeValues(30, _value),
+                onChanged: (values) => {handleChangeValue(values.end)},
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -125,23 +132,27 @@ class RangeSliderThumb extends RangeSliderThumbShape {
   }
 
   @override
-  void paint(PaintingContext context, Offset center,
-      {Animation<double> activationAnimation,
-      Animation<double> enableAnimation,
-      bool isDiscrete,
-      bool isEnabled,
-      bool isOnTop,
-      TextDirection textDirection,
-      SliderThemeData sliderTheme,
-      Thumb thumb,
-      bool isPressed}) {
+  void paint(
+    PaintingContext context,
+    Offset center, {
+    required Animation<double> activationAnimation,
+    required Animation<double> enableAnimation,
+    bool? isDiscrete,
+    bool? isEnabled,
+    bool? isOnTop,
+    TextDirection? textDirection,
+    required SliderThemeData sliderTheme,
+    Thumb? thumb,
+    bool? isPressed,
+  }) {
     final Canvas canvas = context.canvas;
+    final height =
+        sliderTheme.trackHeight != null ? sliderTheme.trackHeight! : 27;
     if (thumb == Thumb.end) {
-      final shadowColor = _getShadowColor(sliderTheme.thumbColor);
+      final shadowColor = _getShadowColor(sliderTheme.thumbColor!);
 
       final circle = Path()
-        ..addOval(Rect.fromCircle(
-            center: center, radius: sliderTheme.trackHeight / 2 - 1));
+        ..addOval(Rect.fromCircle(center: center, radius: height / 2 - 1));
 
       final outerShadowPaint = Paint()
         ..color = shadowColor.withAlpha(0xBF)
@@ -149,7 +160,7 @@ class RangeSliderThumb extends RangeSliderThumbShape {
         ..maskFilter = MaskFilter.blur(BlurStyle.outer, 5);
 
       final fillPaint = Paint()
-        ..color = sliderTheme.thumbColor
+        ..color = sliderTheme.thumbColor!
         ..style = PaintingStyle.fill;
 
       canvas.drawPath(circle, fillPaint);
@@ -157,24 +168,20 @@ class RangeSliderThumb extends RangeSliderThumbShape {
     } else {
       final line = Path()
         ..addRect(Rect.fromLTWH(
-            center.dx,
-            center.dy - sliderTheme.trackHeight / 2 + 1,
-            1,
-            sliderTheme.trackHeight - 2));
+            center.dx, center.dy - height / 2 + 1, 1, height - 2));
       final inactiveArea = Path()
         ..addRRect(RRect.fromRectAndCorners(
-          Rect.fromLTWH(0, center.dy - sliderTheme.trackHeight / 2 + 1,
-              center.dx, sliderTheme.trackHeight - 2),
-          topLeft: Radius.circular(sliderTheme.trackHeight / 2),
-          bottomLeft: Radius.circular(sliderTheme.trackHeight / 2),
+          Rect.fromLTWH(0, center.dy - height / 2 + 1, center.dx, height - 2),
+          topLeft: Radius.circular(height / 2),
+          bottomLeft: Radius.circular(height / 2),
         ));
 
       final linePaint = Paint()
-        ..color = sliderTheme.thumbColor
+        ..color = sliderTheme.thumbColor!
         ..style = PaintingStyle.fill;
 
       final areaPaint = Paint()
-        ..color = sliderTheme.disabledActiveTrackColor
+        ..color = sliderTheme.disabledActiveTrackColor!
         ..style = PaintingStyle.fill;
 
       canvas.drawPath(line, linePaint);
@@ -186,16 +193,20 @@ class RangeSliderThumb extends RangeSliderThumbShape {
 class RangeSliderTrack extends RangeSliderTrackShape {
   @override
   Rect getPreferredRect({
-    RenderBox parentBox,
+    required RenderBox parentBox,
     Offset offset = Offset.zero,
-    SliderThemeData sliderTheme,
-    bool isEnabled,
-    bool isDiscrete,
+    required SliderThemeData sliderTheme,
+    bool? isEnabled = false,
+    bool? isDiscrete = false,
   }) {
-    final double thumbWidth = sliderTheme.trackHeight;
-    final double overlayWidth =
-        sliderTheme.overlayShape.getPreferredSize(isEnabled, isDiscrete).width;
-    final double trackHeight = sliderTheme.trackHeight;
+    final double overlayWidth = sliderTheme.overlayShape != null
+        ? sliderTheme.overlayShape!
+            .getPreferredSize(isEnabled!, isDiscrete!)
+            .width
+        : 0;
+    final double trackHeight =
+        sliderTheme.trackHeight != null ? sliderTheme.trackHeight! : 27;
+    ;
     assert(overlayWidth >= 0);
     assert(trackHeight >= 0);
 
@@ -225,14 +236,14 @@ class RangeSliderTrack extends RangeSliderTrackShape {
 
   @override
   void paint(PaintingContext context, Offset offset,
-      {RenderBox parentBox,
-      SliderThemeData sliderTheme,
-      Animation<double> enableAnimation,
-      Offset startThumbCenter,
-      Offset endThumbCenter,
+      {required RenderBox parentBox,
+      required SliderThemeData sliderTheme,
+      required Animation<double> enableAnimation,
+      required Offset startThumbCenter,
+      required Offset endThumbCenter,
       bool isEnabled = false,
       bool isDiscrete = false,
-      TextDirection textDirection}) {
+      required TextDirection textDirection}) {
     if (sliderTheme.trackHeight == 0) {
       return;
     }
@@ -244,9 +255,9 @@ class RangeSliderTrack extends RangeSliderTrackShape {
         begin: sliderTheme.disabledInactiveTrackColor,
         end: sliderTheme.inactiveTrackColor);
     final Paint activePaint = Paint()
-      ..color = activeTrackColorTween.evaluate(enableAnimation);
+      ..color = activeTrackColorTween.evaluate(enableAnimation)!;
     final Paint inactivePaint = Paint()
-      ..color = inactiveTrackColorTween.evaluate(enableAnimation);
+      ..color = inactiveTrackColorTween.evaluate(enableAnimation)!;
     Paint leftTrackPaint;
     switch (textDirection) {
       case TextDirection.ltr:
@@ -276,7 +287,7 @@ class RangeSliderTrack extends RangeSliderTrackShape {
 
     final spread = 0.3;
     final shadowColor =
-        _getShadowColor(sliderTheme.inactiveTrackColor).withAlpha(0x3F);
+        _getShadowColor(sliderTheme.inactiveTrackColor!).withAlpha(0x3F);
     final shadowPath = Path()
       ..addRRect(RRect.fromRectAndRadius(
         Rect.fromLTRB(trackRect.left, trackRect.top + 1, trackRect.right,

@@ -7,7 +7,7 @@ class CircleProgress extends CustomPainter {
   final num value;
   final Color color;
 
-  Color shadowColor;
+  late Color shadowColor;
 
   CircleProgress({this.max = 100, this.value = 10, this.color = Colors.orange})
       : assert(max >= value) {
