@@ -5,36 +5,25 @@ import 'dart:ui';
 import 'package:color_models/color_models.dart';
 import 'dart:math' as math;
 
-// ignore: must_be_immutable
-class SliderInput extends StatefulWidget {
+class SliderInput extends StatelessWidget {
   final Color color;
-  late Color shadowColor;
   final bool isVertical;
+  final double value;
+  final Function onChange;
+  final double min;
+  final double max;
+  final double trackHeight;
 
-  SliderInput({Key? key, this.color = Colors.orange, this.isVertical = true})
-      : super(key: key) {
-    final RgbColor rgbShadowColor =
-        RgbColor(color.red, color.green, color.blue, color.alpha)
-            .toHsbColor()
-            .copyWith(brightness: 50)
-            .toRgbColor();
-    shadowColor = Color.fromARGB(rgbShadowColor.alpha, rgbShadowColor.red,
-            rgbShadowColor.green, rgbShadowColor.blue)
-        .withAlpha(0x3F);
-  }
-
-  @override
-  _SliderInputState createState() => _SliderInputState();
-}
-
-class _SliderInputState extends State<SliderInput> {
-  double _value = 55.0;
-
-  handleChangeValue(double newValue) {
-    setState(() {
-      _value = newValue;
-    });
-  }
+  const SliderInput(
+      {Key? key,
+      this.color = Colors.orange,
+      this.isVertical = false,
+      required this.value,
+      required this.onChange,
+      this.min = 0,
+      this.max = 100,
+      this.trackHeight = 27})
+      : super(key: key);
 
   static final RangeThumbSelector _customRangeThumbSelector = (
     TextDirection textDirection,
@@ -74,45 +63,63 @@ class _SliderInputState extends State<SliderInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 244,
-      height: 244,
-      child: RotatedBox(
-        quarterTurns: widget.isVertical ? -1 : 0,
-        child: Column(
-          children: [
-            Text(
-              _value.toStringAsFixed(2),
-              style: Theme.of(context)
-                  .textTheme
-                  .headline4
-                  ?.copyWith(color: kUnderweightColor),
+    return RotatedBox(
+      quarterTurns: isVertical ? -1 : 0,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            value.toStringAsFixed(2),
+            style:
+                Theme.of(context).textTheme.headline4?.copyWith(color: color),
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: trackHeight,
+              activeTrackColor: color,
+              inactiveTrackColor: kBackgroundColor,
+              thumbColor: kBackgroundColor,
+              rangeThumbShape: RangeSliderThumb(),
+              disabledActiveTrackColor: kBackgroundColor.withAlpha(0x3F),
+              thumbSelector: _customRangeThumbSelector,
+              rangeTrackShape: RangeSliderTrack(),
+              overlayShape: RangeSliderOverlay(),
+              minThumbSeparation: 0,
             ),
-            SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 27,
-                activeTrackColor: kUnderweightColor,
-                inactiveTrackColor: kBackgroundColor,
-                thumbColor: kBackgroundColor,
-                rangeThumbShape: RangeSliderThumb(),
-                disabledActiveTrackColor: kBackgroundColor.withAlpha(0x3F),
-                thumbSelector: _customRangeThumbSelector,
-                rangeTrackShape: RangeSliderTrack(),
-                minThumbSeparation: 0,
-              ),
-              child: MyRangeSlider(
-                isVertical: widget.isVertical,
-                min: 0,
-                max: 100,
-                values: RangeValues(30, _value),
-                onChanged: (values) => {handleChangeValue(values.end)},
-              ),
+            child: MyRangeSlider(
+              isVertical: isVertical,
+              min: 0,
+              max: max,
+              values: RangeValues(min, value),
+              onChanged: (values) => {onChange(values.end)},
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
+
+class RangeSliderOverlay extends SliderComponentShape {
+  @override
+  Size getPreferredSize(bool isEnabled, bool isDiscrete) {
+    return Size(0, 0);
+  }
+
+  @override
+  void paint(PaintingContext context, Offset center,
+      {required Animation<double> activationAnimation,
+      required Animation<double> enableAnimation,
+      required bool isDiscrete,
+      required TextPainter labelPainter,
+      required RenderBox parentBox,
+      required SliderThemeData sliderTheme,
+      required TextDirection textDirection,
+      required double value,
+      required double textScaleFactor,
+      required Size sizeWithOverflow}) {}
 }
 
 class RangeSliderThumb extends RangeSliderThumbShape {

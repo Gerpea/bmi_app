@@ -16,4 +16,5 @@ const kHealthyColor = kGreenColor;
 const kOverweightColor = kOrangeColor;
 const kObesseColor = kRedColor;
 
-const double lDefaultPadding = 20.0;
+const double kDefaultHorizontalPadding = 16.0;
+const double kDefaultVerticalPadding = 22.0;

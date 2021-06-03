@@ -17,8 +17,13 @@ class MyApp extends StatelessWidget {
           backgroundColor: kBackgroundColor,
           textTheme: TextTheme(
             headline1: TextStyle(fontWeight: FontWeight.w500, fontSize: 48),
+            headline2: TextStyle(fontWeight: FontWeight.w500, fontSize: 22),
             headline4: TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
-          )),
+            subtitle1: TextStyle(
+                fontWeight: FontWeight.normal,
+                fontSize: 18,
+                fontFamily: 'Open Sans'),
+          ).apply(bodyColor: kTextColor, displayColor: kTextColor)),
       home: BMIScreen(),
     );
   }

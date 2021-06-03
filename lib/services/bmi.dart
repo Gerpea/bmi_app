@@ -1,5 +1,3 @@
-import 'package:bmi/models/bmi.dart';
-
-num calculateBMI(num weight, num height) {
-  return weight / (height * height);
+double calculateBMI(double weight, double height) {
+  return weight / (height / 100 * height / 100);
 }

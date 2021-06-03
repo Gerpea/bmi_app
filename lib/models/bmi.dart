@@ -9,7 +9,7 @@ enum BMIType {
 }
 
 class BMI {
-  final num value;
+  final double value;
   final Color color;
 
   factory BMI(value) {
